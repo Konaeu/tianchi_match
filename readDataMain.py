@@ -22,6 +22,8 @@ SPLIT_NUM=1000
 
 ### 读取达人推荐搭配
 def readMatchSet(filename):
+    print '*************readMatchSet*****************'
+    time1=time.time()
     fp_match_set=open(filename,'r')
     MatchSet={}
     countLine=0     
@@ -38,7 +40,9 @@ def readMatchSet(filename):
             detain_item_list.append(item_2_list) 
         MatchSet[string.atoi(coll_id)]=detain_item_list
     fp_match_set.close()
-    print 'num of lines in readMatchSet: '+str(countLine)
+    time2=time.time()    
+    print 'cost time: '+str(time2-time1)+' s'
+    print '************************************************'
     return MatchSet
 
 ##删除列表中所有item条目
@@ -174,17 +178,17 @@ def calSimilarItem(Items,CategoryItem,keyWords,item_id):
     print '****************************************'
     return similarItems
                     
-                
+###根据达人体检搭配给出相似关系和搭配相关度
+def calSimilarAndCorrPro():
+    
             
         
-    
-    
-    
+MatchSet= readMatchSet(MATCH_SET_FILENAME) 
 Items,CategoryItem,keyWords=readItems(ITEMS_FILENAME)
 UserBuy=readUserHistory()  #读取用户的信息 
-item_id=2402607
+
+
 similarItems=calSimilarItem(Items,CategoryItem,keyWords,item_id)
-similarItems[1840001]
   
  
      
