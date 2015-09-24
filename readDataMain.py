@@ -180,6 +180,8 @@ def calSimilarItem(Items,CategoryItem,keyWords,item_id):
                     
 ###根据达人体检搭配给出相似关系和搭配相关度
 def calSimilarAndCorrPro(MatchSet):
+    print '*******************calSimilarAndCorrPro*************'
+    time1=time.time()
     similarPro={}
     corrPro={}
     #计算相似度
@@ -214,9 +216,9 @@ def calSimilarAndCorrPro(MatchSet):
             cat1=MatchSet[key][i]
             for j in range(i+1,len(MatchSet[key])):
                 cat2=MatchSet[key][j]
-                for m in len(0,len(cat1)):
+                for m in range(0,len(cat1)):
                     item1=cat1[m]
-                    for n in len(0,len(cat2)):
+                    for n in range(0,len(cat2)):
                         item2=cat2[n]
                         ##添加(item1,item2)到item1的元素中
                         if corrPro.has_key(item1)==False:
@@ -236,22 +238,26 @@ def calSimilarAndCorrPro(MatchSet):
                                 corrPro[item2][item1]=1
                             else:
                                 corrPro[item2][item1]+=1
-    
+    time2=time.time()
+    print 'cost time:'+str(time2-time1)+' s'
+    print '****************************************'    
     return similarPro,corrPro
                                 
                             
                
     
             
-        
+
+#### 读取原始数据      
 MatchSet= readMatchSet(MATCH_SET_FILENAME) 
 Items,CategoryItem,keyWords=readItems(ITEMS_FILENAME)
 UserBuy=readUserHistory()  #读取用户的信息 
 
+### 计算相关度和相似度
+similarItems=calSimilarItem(Items,CategoryItem,keyWords,item_id) 
+similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
 
-similarItems=calSimilarItem(Items,CategoryItem,keyWords,item_id)
-  
-similarPro=calSimilarAndCorrPro(MatchSet)
+
  
         
     
