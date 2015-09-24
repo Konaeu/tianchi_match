@@ -24,8 +24,6 @@ SPLIT_NUM=1000
 
 ### 读取达人推荐搭配
 def readMatchSet(filename):
-    print '*************readMatchSet*****************'
-    time1=time.time()
     fp_match_set=open(filename,'r')
     MatchSet={}
     countLine=0     
@@ -42,9 +40,6 @@ def readMatchSet(filename):
             detain_item_list.append(item_2_list) 
         MatchSet[string.atoi(coll_id)]=detain_item_list
     fp_match_set.close()
-    time2=time.time()    
-    print 'cost time: '+str(time2-time1)+' s'
-    print '************************************************'
     return MatchSet
 
 ##删除列表中所有item条目
@@ -59,8 +54,6 @@ def similarFactor(List1,List2):
     return len(set(List1).intersection(set(List2)))*2.0/(len(set(List1))+len(set(List2)))
 ### 读取所有的商品信息
 def readItems(filename):
-    print '****************readItems*************'
-    time1=time.time()
     fp_items=open(filename,'r')
     Items={}
     CategoryItem={} #以类目ID作为key
@@ -104,15 +97,11 @@ def readItems(filename):
             if(len(keyWords[key1][key2])<lowFreTh):
                 for i in keyWords[key1][key2]:  
                     Items[i]=removeAllSame(Items[i],key2);
-                    CategoryItem[key1][i]= removeAllSame(CategoryItem[key1][i],key2);
-    
-    time2=time.time()        
-    print 'cost time: '+str(time2-time1)+' s'   
+                    CategoryItem[key1][i]= removeAllSame(CategoryItem[key1][i],key2);  
     return Items,CategoryItem,keyWords
    
 #将大文件进行分割
-def splitFile(filename,split_num):   
-    print '*******************splite*************'
+def splitFile(filename,split_num):    
     time1=time.time()
     fo=open(filename,'r')
     lineNum=len(fo.readlines()) #读取总共的行数
@@ -136,14 +125,10 @@ def splitFile(filename,split_num):
             fw.writelines(str1)
             fw.close()
     fo.close()
-    time2=time.time()
-    print 'cost time:'+str(time2-time1)+' s'
-    print '****************************************'
+ 
 
 ### 并行计算的方式读取用户的购买信息
 def readUserHistory():
-    print '*******************readUserHistory*************'
-    time1=time.time()
     if os.path.exists('SPLIT')==False:#是否存在SPILT文件夹，如果不存在则创建
         os.mkdir('SPLIT')
         splitFile(USER_BUY_HISTORY,1000) #分成1000份
@@ -170,9 +155,6 @@ def readUserHistory():
                 maxTime=curTime
             if(curTime<minTime):
                 minTime=curTime
-    time2=time.time()
-    print 'cost time:'+str(time2-time1)+' s'
-    print '****************************************'
     return userBuy,minTime,maxTime
 
 ### 读取要预测搭配的商品ID
@@ -187,8 +169,6 @@ def readTestData():
         
 #####使用基于Item-to-Item的算法来对给定的item_id进行求算与之相似的item_id
 def calSimilarItem(Items,CategoryItem,keyWords,item_id):
-    print '*******************calSimilarItem*************'
-    time1=time.time()
     similarItems={} #字典，用来保存所有和item_id有关的item
     cat_id=Items[item_id][0]
     for term1 in Items[item_id][1:]:
@@ -196,15 +176,10 @@ def calSimilarItem(Items,CategoryItem,keyWords,item_id):
             if item!=item_id:   
                 if similarItems.has_key(item)==False:#由于多个关键词会导致重复，这里去除重复
                     similarItems[item]=similarFactor(Items[item],Items[item_id])
-    time2=time.time()
-    print 'cost time:'+str(time2-time1)+' s'
-    print '****************************************'
     return similarItems
                     
 ###根据达人体检搭配给出相似关系和搭配相关度
 def calSimilarAndCorrPro(MatchSet):
-    print '*******************calSimilarAndCorrPro*************'
-    time1=time.time()
     similarPro={}
     corrPro={}
     #计算相似度
@@ -261,14 +236,10 @@ def calSimilarAndCorrPro(MatchSet):
                                 corrPro[item2][item1]=1
                             else:
                                 corrPro[item2][item1]+=1
-    time2=time.time()
-    print 'cost time:'+str(time2-time1)+' s'
-    print '****************************************'    
     return similarPro,corrPro
                                 
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
 def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
-    print '****************calSimilarAndCorrUser******************'
     time1=time.time()    
     timeBuySta={}
     ItemBuyHist={}  #用来存储用户购买的记录，关键词是item_id    
@@ -294,17 +265,13 @@ def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
             if ItemBuyHist.has_key(curItem)==False:
                 ItemBuyHist[curItem]=[user_id]
             else:
-                ItemBuyHist[curItem]+=[user_id]
-    time2=time.time()
-    print 'cost time:'+str(time2-time1)+' s'
-    print '****************************************'    
+                ItemBuyHist[curItem]+=[user_id]  
     return timeBuySta,ItemBuyOneMonth,ItemBuyHist
 ##提交结果，只使用商品信息进行推荐，不推荐同一类，但可以推荐相似度较大的同类产品的
 def matchResult(TestItems,similarPro,corrPro):
     #万能搭配
     matchAll=[]
     for i in corrPro.keys():
-        sumValue+=[len(corrPro[i])]
         lenVal=len(corrPro[i])
         if lenVal>40: #这里的100是通过观察分布得到的，后面可以改为自适应值
             matchAll+=[[i,lenVal]] 
@@ -354,7 +321,7 @@ def matchResult(TestItems,similarPro,corrPro):
                         count+=1
                     if count>199:
                         break      
-            print str(itemObj)+':'+str(count)
+            #print str(itemObj)+':'+str(count)
             fp.writelines(strResult)
         else:            
             if resultList[200][1]<0.2: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
@@ -423,7 +390,7 @@ similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
 timeBuySta,ItemBuyOneMonth,ItemBuyHist=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
 
-
+matchResult(TestItems,similarPro,corrPro)
 
         
     
