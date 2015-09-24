@@ -17,7 +17,7 @@ MATCH_SET_FILENAME='dim_fashion_match_sets.txt' #穿衣搭配套餐
 ITEMS_FILENAME='dim_items.txt'  #商品信息表：dim_items
 USER_BUY_HISTORY='user_bought_history.txt'  #用户历史行为表：user_bought_history
 RESULT_FILENAME='fm_submissions.txt' #存储每个商品的推荐结果
-TEST_READ='test.txt'
+TEST_IITEMS='test_items.txt'
 SPLIT_FOLD_NAME='SPLIT'
 SPLIT_NUM=1000
 
@@ -174,6 +174,16 @@ def readUserHistory():
     print '****************************************'
     return userBuy,minTime,maxTime
 
+### 读取要预测搭配的商品ID
+def readTestData():
+    testItems=[]
+    fo=open(TEST_IITEMS,'r')
+    lines=fo.readlines()
+    for line in lines:
+        testItems+=[string.atoi(line)]
+    fo.close()
+    return testItems
+        
 #####使用基于Item-to-Item的算法来对给定的item_id进行求算与之相似的item_id
 def calSimilarItem(Items,CategoryItem,keyWords,item_id):
     print '*******************calSimilarItem*************'
@@ -289,9 +299,13 @@ def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
     print '****************************************'    
     return timeBuySta,ItemBuyOneMonth,ItemBuyHist
 ##提交结果，只使用商品信息进行推荐，不推荐同一类，但可以推荐相似度较大的同类产品的
-def matchResult():
-    
-    
+def matchResult(TestItems,similarPro,corrPro):
+    fp=open(RESULT_FILENAME,'w')
+    result=[]
+    for itemObj in TestItems:
+        similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj)
+        
+        
  
 #由连续时间进行分割
 def splitTime(t):
@@ -311,12 +325,13 @@ def calTimeDistance(t1,t2):#计算两个时间相差的的月份，t1<t2
 MatchSet= readMatchSet(MATCH_SET_FILENAME) 
 Items,CategoryItem,keyWords=readItems(ITEMS_FILENAME)
 UserBuy,minTime,maxTime=readUserHistory()  #读取用户的信息 
-TestItems=
+TestItems=readTestData()
+len(TestItems)
 
 ### 计算相关度和相似度
 #根据商品的关键词来计算商品间的相似性，这里暂时没有使用图片信息，这里返回指定item_id的所有相似商品id
 item_id=596 
-similarItems=calSimilarItem(Items,CategoryItem,keyWords,item_id)
+
 
 ## 根据达人推荐搭配计算相似性和相关性
 similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
