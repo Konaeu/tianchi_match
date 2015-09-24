@@ -301,23 +301,97 @@ def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
     return timeBuySta,ItemBuyOneMonth,ItemBuyHist
 ##提交结果，只使用商品信息进行推荐，不推荐同一类，但可以推荐相似度较大的同类产品的
 def matchResult(TestItems,similarPro,corrPro):
+    #万能搭配
+    matchAll=[]
+    for i in corrPro.keys():
+        sumValue+=[len(corrPro[i])]
+        lenVal=len(corrPro[i])
+        if lenVal>40: #这里的100是通过观察分布得到的，后面可以改为自适应值
+            matchAll+=[[i,lenVal]] 
+    matchAll= sorted(matchAll, key=itemgetter(1), reverse=True) 
+    
     fp=open(RESULT_FILENAME,'w')
-    result=[]
+    result={}
     for itemObj in TestItems:
+        itemObj=12252
         similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj)
         if similarPro.has_key(itemObj)==True:
             for i in similarPro[itemObj].keys():                
                 similarObjs[itemObj][i]=1#这里先忽略具体商品搭配的次数
-        #similarObjs=sorted(similarObjs.iteritems(), key=itemgetter(1), reverse=True)         
+        #similarObjs=sorted(similarObjs.iteritems(), key=itemgetter(1), reverse=True) 
+        if corrPro.has_key(itemObj)==True: #判断达人推荐中是否有该商品
+            for key in corrPro[itemObj].keys():
+                 result[key]=99999999.0
+        
         for item1 in similarObjs.keys():
             if corrPro.has_key(item1)==True:
-                true
-                
-            
-            
-        #确定相关度
- 
-        
+                for item2 in corrPro[item1].keys():
+                    tmpCorr=corrPro[item1][item2]*1.0*similarObjs[item1]
+                    if result.has_key(item2)==False:
+                        result[item2]=tmpCorr
+                    else:                        
+                        if result[item2]<tmpCorr:
+                            result[item2]=tmpCorr
+        resultList=sorted(result.iteritems(), key=itemgetter(1), reverse=True) 
+        ## 如果相关度小于一定的值，不如直接推荐爆款
+        strResult=str(itemObj)+' '
+        if len(resultList)<200: #如果通过计算得到的相关值较少，则只可能通过随机选择，或者选择爆款
+            print str(itemObj)+':<200'            
+            count=0
+            for i in range(0,len(resultList)):                
+                if i==0:
+                    strResult+=str(resultList[i])
+                else:
+                    strResult+=str(resultList[i])+','
+            count=len(resultList)
+            for j in range(0,len(matchAll)):
+                if (result.has_key(matchAll[j][0])==False)and(Items[matchAll[j][0]][0]!=Items[itemObj][0]):
+                    if(count<199):
+                        strResult+=str(matchAll[j][0])+','
+                        count+=1
+                    if count==199:
+                        strResult+=str(matchAll[j][0])+'\n'
+                        count+=1
+                    if count>199:
+                        break      
+            print str(itemObj)+':'+str(count)
+            fp.writelines(strResult)
+        else:            
+            if resultList[200][1]<0.2: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
+                count=0
+                for i in range(0,len(resultList)):
+                    if i==0:
+                        strResult+=str(resultList[i][0])
+                        count+=1
+                    else:
+                        strResult+=str(resultList[i][0])+','
+                        count+=1
+                    if count>180:
+                        break
+                for j in range(0,len(matchAll)):
+                    if ((result.has_key(matchAll[j][0])==False)or(result.has_key(matchAll[j][0])and resultList.index(matchAll[j][0])>180))and(Items[matchAll[j][0]][0]!=Items[itemObj][0]):
+                        if(count<199):
+                            strResult+=str(matchAll[j][0])+','
+                            count+=1
+                        if count==199:
+                            strResult+=str(matchAll[j][0])+'\n'
+                            count+=1
+                        if count>199:
+                            break  
+                fp.writelines(strResult)
+            else:
+                count=0
+                for i in range(0,len(resultList)):
+                    if i==199:
+                        strResult+=str(resultList[i][0])+'\n'
+                        count+=1
+                    else:
+                        strResult+=str(resultList[i][0])+','
+                        count+=1
+                    if count==200:
+                        break
+                fp.writelines(strResult)
+    fp.close()
  
 #由连续时间进行分割
 def splitTime(t):
