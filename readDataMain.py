@@ -278,7 +278,7 @@ def matchResult(TestItems,similarPro,corrPro):
             matchAll+=[[i,lenVal]] 
     matchAll= sorted(matchAll, key=itemgetter(1), reverse=True) 
     
-    fp=open(RESULT_FILENAME,'w')
+    fp=open('fm_submissions1.txt','w')
     result={}
     proc=0
     stepLen=len(TestItems)/10
@@ -298,7 +298,7 @@ def matchResult(TestItems,similarPro,corrPro):
         for item1 in similarObjs.keys():
             if corrPro.has_key(item1)==True:
                 for item2 in corrPro[item1].keys():
-                    tmpCorr=corrPro[item1][item2]*1.0*(2-math.pow(np.e,-0.3*(similarObjs[item1])))
+                    tmpCorr=similarObjs[item1]*1.0*(2-math.pow(np.e,-0.3*(corrPro[item1][item2]))) 
                     if result.has_key(item2)==False:
                         result[item2]=tmpCorr
                     else:                        
