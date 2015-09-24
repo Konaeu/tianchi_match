@@ -303,7 +303,7 @@ def matchResult(TestItems,similarPro,corrPro):
         ## 如果相关度小于一定的值，不如直接推荐爆款
         strResult=str(itemObj)+' '
         if len(resultList)<200: #如果通过计算得到的相关值较少，则只可能通过随机选择，或者选择爆款
-            print str(itemObj)+':<200'            
+            print 'len(resultList)<200'           
             count=0
             for i in range(0,len(resultList)):                
                 if i==0:
@@ -324,7 +324,8 @@ def matchResult(TestItems,similarPro,corrPro):
             #print str(itemObj)+':'+str(count)
             fp.writelines(strResult)
         else:            
-            if resultList[200][1]<0.2: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
+            if resultList[200][1]<0.1: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
+                print 'resultList[200][1]<0.2'
                 count=0
                 for i in range(0,len(resultList)):
                     if i==0:
