@@ -2,6 +2,7 @@ import os
 import PIL
 import time
 import string
+import math
 from multiprocessing import Pool
 from PIL import Image
 from readDataParallel import *
@@ -279,8 +280,12 @@ def matchResult(TestItems,similarPro,corrPro):
     
     fp=open(RESULT_FILENAME,'w')
     result={}
+    proc=0
+    stepLen=len(TestItems)/10
     for itemObj in TestItems:
-        itemObj=12252
+        proc+=1
+        if proc%stepLen==0:
+            print 'processing:'+str(proc/len(TestItems))
         similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj)
         if similarPro.has_key(itemObj)==True:
             for i in similarPro[itemObj].keys():                
@@ -293,7 +298,7 @@ def matchResult(TestItems,similarPro,corrPro):
         for item1 in similarObjs.keys():
             if corrPro.has_key(item1)==True:
                 for item2 in corrPro[item1].keys():
-                    tmpCorr=corrPro[item1][item2]*1.0*similarObjs[item1]
+                    tmpCorr=corrPro[item1][item2]*1.0*(2-math.pow(np.e,-0.3*(similarObjs[item1])))
                     if result.has_key(item2)==False:
                         result[item2]=tmpCorr
                     else:                        
@@ -324,7 +329,7 @@ def matchResult(TestItems,similarPro,corrPro):
             #print str(itemObj)+':'+str(count)
             fp.writelines(strResult)
         else:            
-            if resultList[200][1]<0.1: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
+            if resultList[200][1]<0.2: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
                 print 'resultList[200][1]<0.2'
                 count=0
                 for i in range(0,len(resultList)):
