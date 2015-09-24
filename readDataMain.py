@@ -156,17 +156,16 @@ def readUserHistory():
     for index in range(0,len(results)):
         for  user_id in results[index].keys():
             if userBuy.has_key(user_id)==False:
-                userBuy[user_id]=results[index][user_id]
+                userBuy[user_id]=results[index][user_id]                
             else:
                 userBuy[user_id]+=results[index][user_id]
-            #确定最大时间和最小时间
-    for user_id in userBuy.keys():
-        for term in range(0,len(userBuy[user_id])):
-            curTime=userBuy[user_id][term][1]
-            if(curTime>maxTime):
-                maxTime=curTime
-            if(curTime<minTime):
-                minTime=curTime
+            for j in range(0,len(results[index][user_id])):
+                curTime=results[index][user_id][j][1]
+                if(curTime>maxTime):
+                    maxTime=curTime
+                if(curTime<minTime):
+                    minTime=curTime
+            #确定最大时间和最小时间         
     time2=time.time()
     print 'cost time:'+str(time2-time1)+' s'
     print '****************************************'
@@ -264,7 +263,7 @@ def calSimilarAndCorrUser(UserBuy):
 #### 读取原始数据      
 MatchSet= readMatchSet(MATCH_SET_FILENAME) 
 Items,CategoryItem,keyWords=readItems(ITEMS_FILENAME)
-UserBuy=readUserHistory()  #读取用户的信息 
+UserBuy,minTime,maxTime=readUserHistory()  #读取用户的信息 
 
 ### 计算相关度和相似度
 #根据商品的关键词来计算商品间的相似性，这里暂时没有使用图片信息，这里返回指定item_id的所有相似商品id
