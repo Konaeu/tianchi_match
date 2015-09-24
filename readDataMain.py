@@ -179,7 +179,68 @@ def calSimilarItem(Items,CategoryItem,keyWords,item_id):
     return similarItems
                     
 ###根据达人体检搭配给出相似关系和搭配相关度
-def calSimilarAndCorrPro():
+def calSimilarAndCorrPro(MatchSet):
+    similarPro={}
+    corrPro={}
+    #计算相似度
+    for key in MatchSet.keys():
+        for i in range(0,len(MatchSet[key])):
+            if len(MatchSet[key][i])>1:
+                for m in range(0,len(MatchSet[key][i])):
+                    item1=MatchSet[key][i][m]
+                    for n in range(m+1,len(MatchSet[key][i])):
+                        item2=MatchSet[key][i][n]
+                        #添加（item1，item2）到item1的元素中
+                        if similarPro.has_key(item1)==False:
+                            similarPro[item1]={}
+                            similarPro[item1][item2]=1
+                        else:
+                            if similarPro[item1].has_key(item2)==False:
+                                similarPro[item1][item2]=1
+                            else:
+                                similarPro[item1][item2]+=1
+                        #添加（item2,item1）到item1的元素中
+                        if similarPro.has_key(item2)==False:
+                            similarPro[item2]={}
+                            similarPro[item2][item1]=1
+                        else:
+                            if similarPro[item2].has_key(item1)==False:                                
+                                similarPro[item2][item1]=1
+                            else:
+                                similarPro[item2][item1]+=1    
+    #计算相关性
+    for key in MatchSet.keys():
+        for i in range(0,len(MatchSet[key])):
+            cat1=MatchSet[key][i]
+            for j in range(i+1,len(MatchSet[key])):
+                cat2=MatchSet[key][j]
+                for m in len(0,len(cat1)):
+                    item1=cat1[m]
+                    for n in len(0,len(cat2)):
+                        item2=cat2[n]
+                        ##添加(item1,item2)到item1的元素中
+                        if corrPro.has_key(item1)==False:
+                            corrPro[item1]={}
+                            corrPro[item1][item2]=1
+                        else:
+                            if corrPro[item1].has_key(item2)==False:
+                                corrPro[item1][item2]=1
+                            else:
+                                corrPro[item1][item2]+=1
+                        ##添加（item2，item1）到item2的元素中
+                        if corrPro.has_key(item2)==False:
+                            corrPro[item2]={}
+                            corrPro[item2][item1]=1
+                        else:
+                            if corrPro[item2].has_key(item1)==False:
+                                corrPro[item2][item1]=1
+                            else:
+                                corrPro[item2][item1]+=1
+    
+    return similarPro,corrPro
+                                
+                            
+               
     
             
         
@@ -190,8 +251,8 @@ UserBuy=readUserHistory()  #读取用户的信息
 
 similarItems=calSimilarItem(Items,CategoryItem,keyWords,item_id)
   
+similarPro=calSimilarAndCorrPro(MatchSet)
  
-     
         
     
     
