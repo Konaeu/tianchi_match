@@ -9,6 +9,7 @@ import numpy as np
 import scipy as sp 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from operator import itemgetter  
 THEAD_NUM=16#进程数
 SEPARATOR_1=' '     #空格分隔符
 SEPARATOR_2=','     #以‘，’为分隔符
@@ -304,7 +305,18 @@ def matchResult(TestItems,similarPro,corrPro):
     result=[]
     for itemObj in TestItems:
         similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj)
-        
+        if similarPro.has_key(itemObj)==True:
+            for i in similarPro[itemObj].keys():                
+                similarObjs[itemObj][i]=1#这里先忽略具体商品搭配的次数
+        #similarObjs=sorted(similarObjs.iteritems(), key=itemgetter(1), reverse=True)         
+        for item1 in similarObjs.keys():
+            if corrPro.has_key(item1)==True:
+                true
+                
+            
+            
+        #确定相关度
+ 
         
  
 #由连续时间进行分割
@@ -326,11 +338,10 @@ MatchSet= readMatchSet(MATCH_SET_FILENAME)
 Items,CategoryItem,keyWords=readItems(ITEMS_FILENAME)
 UserBuy,minTime,maxTime=readUserHistory()  #读取用户的信息 
 TestItems=readTestData()
-len(TestItems)
-
+ 
 ### 计算相关度和相似度
 #根据商品的关键词来计算商品间的相似性，这里暂时没有使用图片信息，这里返回指定item_id的所有相似商品id
-item_id=596 
+ 
 
 
 ## 根据达人推荐搭配计算相似性和相关性
