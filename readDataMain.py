@@ -159,13 +159,15 @@ def readUserHistory():
                 userBuy[user_id]=results[index][user_id]                
             else:
                 userBuy[user_id]+=results[index][user_id]
-            for j in range(0,len(results[index][user_id])):
-                curTime=results[index][user_id][j][1]
-                if(curTime>maxTime):
-                    maxTime=curTime
-                if(curTime<minTime):
-                    minTime=curTime
-            #确定最大时间和最小时间         
+                
+    #确定最大时间和最小时间 
+    for user_id in userBuy.keys():
+        for j in range(0,len(userBuy[user_id])):
+            curTime=userBuy[user_id][j][1]
+            if(curTime>maxTime):
+                maxTime=curTime
+            if(curTime<minTime):
+                minTime=curTime
     time2=time.time()
     print 'cost time:'+str(time2-time1)+' s'
     print '****************************************'
