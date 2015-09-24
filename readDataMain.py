@@ -255,12 +255,47 @@ def calSimilarAndCorrPro(MatchSet):
     return similarPro,corrPro
                                 
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
-def calSimilarAndCorrUser(UserBuy):
+def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
+    print '****************calSimilarAndCorrUser******************'
+    time1=time.time()    
+    timeBuySta={}
+    ItemBuyHist={}  #用来存储用户购买的记录，关键词是item_id    
+    ItemBuyOneMonth={}
+    for user_id in UserBuy.keys():
+        for i in range(0,len(UserBuy[user_id])):
+            #统计每天的购买量
+            curItem=UserBuy[user_id][i][0]
+            curTime=UserBuy[user_id][i][1]
+            if timeBuySta.has_key(curTime)==False:
+                timeBuySta[curTime]=1
+            else:
+                timeBuySta[curTime]+=1
+            #统计每个商品每个月的购买量，以计算商品间时间相关性
+            maxInter=calTimeDistance(minTime,maxTime)   
+            curInter=calTimeDistance(minTime,curTime)
+            if ItemBuyOneMonth.has_key(curItem)==False:                
+                ItemBuyOneMonth[curItem]=list(np.zeros(maxInter+1))
+                ItemBuyOneMonth[curItem][curInter]+=1
+            else:
+                ItemBuyOneMonth[curItem][curInter]+=1
+    time2=time.time()
+    print 'cost time:'+str(time2-time1)+' s'
+    print '****************************************'    
+    return timeBuySta,ItemBuyOneMonth
     
-    
-               
-    
-            
+#由连续时间进行分割
+def splitTime(t):
+    return t/10000,(t%10000)/100,t%100
+def calTimeDistance(t1,t2):#计算两个时间相差的的月份，t1<t2
+    if t1>t2:
+        tmp=t1
+        t1=t2
+        t2=tmp
+    year1,month1,day1=t1/10000,(t1%10000)/100,t1%100
+    year2,month2,day2=t2/10000,(t2%10000)/100,t2%100
+    deltaMonth=(year2-year1)*12+(month2-month1)+ (0 if day2>=day1 else -1)
+    return deltaMonth
+                       
 
 #### 读取原始数据      
 MatchSet= readMatchSet(MATCH_SET_FILENAME) 
@@ -274,7 +309,7 @@ similarItems=calSimilarItem(Items,CategoryItem,keyWords,item_id)
 
 ## 根据达人推荐搭配计算相似性和相关性
 similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
-
+timeBuySta,ItemBuyOneMonth=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
 
 
