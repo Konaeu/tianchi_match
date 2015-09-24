@@ -269,7 +269,7 @@ def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
                 ItemBuyHist[curItem]+=[user_id]  
     return timeBuySta,ItemBuyOneMonth,ItemBuyHist
 ##提交结果，只使用商品信息进行推荐，不推荐同一类，但可以推荐相似度较大的同类产品的
-def matchResult(TestItems,similarPro,corrPro):
+def matchResult(TestItems,similarPro,corrPro,resultFileName):
     #万能搭配
     matchAll=[]
     for i in corrPro.keys():
@@ -278,14 +278,14 @@ def matchResult(TestItems,similarPro,corrPro):
             matchAll+=[[i,lenVal]] 
     matchAll= sorted(matchAll, key=itemgetter(1), reverse=True) 
     
-    fp=open('fm_submissions1.txt','w')
+    fp=open(resultFileName,'w')
     result={}
     proc=0
     stepLen=len(TestItems)/10
     for itemObj in TestItems:
         proc+=1
         if proc%stepLen==0:
-            print 'processing:'+str(proc/len(TestItems))
+            print 'processing:'+str(proc*1.0/len(TestItems))
         similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj)
         if similarPro.has_key(itemObj)==True:
             for i in similarPro[itemObj].keys():                
@@ -308,7 +308,7 @@ def matchResult(TestItems,similarPro,corrPro):
         ## 如果相关度小于一定的值，不如直接推荐爆款
         strResult=str(itemObj)+' '
         if len(resultList)<200: #如果通过计算得到的相关值较少，则只可能通过随机选择，或者选择爆款
-            print 'len(resultList)<200'           
+            print 'len(resultList)<200:'+str(resultList)           
             count=0
             for i in range(0,len(resultList)):                
                 if i==0:
@@ -330,7 +330,7 @@ def matchResult(TestItems,similarPro,corrPro):
             fp.writelines(strResult)
         else:            
             if resultList[200][1]<0.2: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
-                print 'resultList[200][1]<0.2'
+                print 'resultList[200][1]<0.2:resultList[200][150]:'+str(resultList[200][150])
                 count=0
                 for i in range(0,len(resultList)):
                     if i==0:
@@ -395,8 +395,8 @@ TestItems=readTestData()
 similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
 timeBuySta,ItemBuyOneMonth,ItemBuyHist=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
-
-matchResult(TestItems,similarPro,corrPro)
+resultFileName='fm_submissions.txt'
+matchResult(TestItems,similarPro,corrPro,resultFileName)
 
         
     
