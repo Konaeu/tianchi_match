@@ -13,6 +13,9 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+*.zip
+SPLIT/
+tianchi_fm_img/
 
 # Windows shortcuts
 *.lnk
