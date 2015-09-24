@@ -182,9 +182,9 @@ def calSimilarItem(Items,CategoryItem,keyWords,item_id):
     
 Items,CategoryItem,keyWords=readItems(ITEMS_FILENAME)
 UserBuy=readUserHistory()  #读取用户的信息 
+item_id=2402607
 similarItems=calSimilarItem(Items,CategoryItem,keyWords,item_id)
- 
-
+similarItems[1840001]
   
  
      
