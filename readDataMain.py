@@ -298,7 +298,7 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
         for item1 in similarObjs.keys():
             if corrPro.has_key(item1)==True:
                 for item2 in corrPro[item1].keys():
-                    tmpCorr=similarObjs[item1]*1.0*(2-math.pow(np.e,-0.3*(corrPro[item1][item2]))) 
+                    tmpCorr=similarObjs[item1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2]))) 
                     if result.has_key(item2)==False:
                         result[item2]=tmpCorr
                     else:                        
