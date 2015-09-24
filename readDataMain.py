@@ -151,16 +151,26 @@ def readUserHistory():
     pool.close()
     pool.join()
     userBuy={} 
+    minTime=99999999
+    maxTime=0
     for index in range(0,len(results)):
         for  user_id in results[index].keys():
             if userBuy.has_key(user_id)==False:
                 userBuy[user_id]=results[index][user_id]
             else:
                 userBuy[user_id]+=results[index][user_id]
+            #确定最大时间和最小时间
+    for user_id in userBuy.keys():
+        for term in range(0,len(userBuy[user_id])):
+            curTime=userBuy[user_id][term][1]
+            if(curTime>maxTime):
+                maxTime=curTime
+            if(curTime<minTime):
+                minTime=curTime
     time2=time.time()
     print 'cost time:'+str(time2-time1)+' s'
     print '****************************************'
-    return userBuy
+    return userBuy,minTime,maxTime
 
 #####使用基于Item-to-Item的算法来对给定的item_id进行求算与之相似的item_id
 def calSimilarItem(Items,CategoryItem,keyWords,item_id):
@@ -243,7 +253,10 @@ def calSimilarAndCorrPro(MatchSet):
     print '****************************************'    
     return similarPro,corrPro
                                 
-                            
+## 根据用户购买的历史记录，计算商品的相关性和相似性
+def calSimilarAndCorrUser(UserBuy):
+    
+    
                
     
             
@@ -254,8 +267,16 @@ Items,CategoryItem,keyWords=readItems(ITEMS_FILENAME)
 UserBuy=readUserHistory()  #读取用户的信息 
 
 ### 计算相关度和相似度
-similarItems=calSimilarItem(Items,CategoryItem,keyWords,item_id) 
+#根据商品的关键词来计算商品间的相似性，这里暂时没有使用图片信息，这里返回指定item_id的所有相似商品id
+item_id=596 
+similarItems=calSimilarItem(Items,CategoryItem,keyWords,item_id)
+
+## 根据达人推荐搭配计算相似性和相关性
 similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
+
+## 根据用户购买的历史记录，计算商品的相关性和相似性
+
+
 
 
  
