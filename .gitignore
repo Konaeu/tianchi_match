@@ -15,6 +15,7 @@ $RECYCLE.BIN/
 *.msp
 *.zip
 *.txt
+*.pyc
 SPLIT/
 tianchi_fm_img/
 
