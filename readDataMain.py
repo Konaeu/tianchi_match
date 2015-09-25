@@ -284,7 +284,6 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
     stepLen=len(TestItems)/100
     for itemObj in TestItems:
         proc+=1
-        itemObj=3094262
         if proc%stepLen==0:
             print 'processing:'+str(proc*1.0/len(TestItems))
         similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj)
@@ -298,17 +297,17 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
         
         for i in range(0,len(similarObjsList)):
             item1=similarObjsList[i][0]
-            if (corrPro.has_key(item1)==True) and similarObjsList[i][1]>0.4: #使用那些十分相似的进行寻找相关的
+            if (corrPro.has_key(item1)==True) and similarObjsList[i][1]>0.45: #使用那些十分相似的进行寻找相关的
                 for item2 in corrPro[item1].keys():               
                     tmpCorr=similarObjsList[i][1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2]))) 
-                    print item1,item2,tmpCorr
+                    #print item1,item2,tmpCorr
                     if result.has_key(item2)==False:
                         result[item2]=tmpCorr                                         
                     else:                        
                         if result[item2]<tmpCorr:
                             result[item2]=tmpCorr   
                     #添加搭配项 的近似项                        
-                    if (similarPro.has_key(item2)==True)and(tmpCorr>0.4):#对相关商品继续找相似产品进行限制
+                    if (similarPro.has_key(item2)==True)and(tmpCorr>0.45):#对相关商品继续找相似产品进行限制
                         tmpObjsList=[]
                         for item3 in similarPro[item2].keys():                               
                             tmpObjs=calSimilarItem(Items,CategoryItem,keyWords,item3)                               
@@ -317,9 +316,9 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
                                 #这里只添加前几项
                                 for i in range(0,10):                                        
                                     item4=tmpObjsList[i][0]
-                                    item4Corr=similarObjs[item1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2])))*tmpObjsList[i][1]
-                                    if (Items[item4][0]!=Items[itemObj][0]) and item4Corr>0.3:   
-                                        print item1,item2,item3,item4,item4Corr
+                                    item4Corr=tmpCorr*tmpObjsList[i][1]
+                                    if (Items[item4][0]!=Items[itemObj][0]) and item4Corr>0.35:   
+                                       # print item1,item2,item3,item4,item4Corr
                                         if (result.has_key(item4)==False):
                                             result[item4]=item4Corr                                                
                                         else:
@@ -418,7 +417,7 @@ TestItems=readTestData()
 similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
 timeBuySta,ItemBuyOneMonth,ItemBuyHist=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
-resultFileName='fm_submissions1.txt'
+resultFileName='fm_submissions_2.txt'
 matchResult(TestItems,similarPro,corrPro,resultFileName)
 
 LL=[]
