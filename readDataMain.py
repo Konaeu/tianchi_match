@@ -3,6 +3,7 @@ import PIL
 import time
 import string
 import math
+import random
 from multiprocessing import Pool
 from PIL import Image
 from readDataParallel import *
@@ -102,7 +103,7 @@ def readItems(filename):
     return Items,CategoryItem,keyWords
    
 #将大文件进行分割
-def splitFile(filename,split_num):    
+def splitFile(filename,objFolderName,split_num):    
     time1=time.time()
     fo=open(filename,'r')
     lineNum=len(fo.readlines()) #读取总共的行数
@@ -117,7 +118,7 @@ def splitFile(filename,split_num):
             if index>0:
                 fw.writelines(str1)
                 fw.close()
-            newFile ='./SPLIT1/'+str(index)+'.txt'
+            newFile =os.path.join(objFolderName,str(index)+'.txt') 
             fw=open(newFile,'w')
             str1=[lineStr]
         else:
@@ -282,10 +283,14 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
     result={}
     proc=0
     stepLen=len(TestItems)/100
-    for itemObj in TestItems:
+    
+    for itemObj in TestItems:        
         proc+=1
+        #itemObj=247482
         if proc%stepLen==0:
             print 'processing:'+str(proc*1.0/len(TestItems))
+        #计算相似度
+        coutCurNum=0 #统计当前共选择的match数量
         similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj)
         if similarPro.has_key(itemObj)==True:
             for i in similarPro[itemObj].keys():                
@@ -295,19 +300,27 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
             for key in corrPro[itemObj].keys():
                  result[key]=99999999.0
         
+        breakFactor=1.2
         for i in range(0,len(similarObjsList)):
             item1=similarObjsList[i][0]
-            if (corrPro.has_key(item1)==True) and similarObjsList[i][1]>0.45: #使用那些十分相似的进行寻找相关的
-                for item2 in corrPro[item1].keys():               
+            if (corrPro.has_key(item1)==True) and similarObjsList[i][1]>0.4: #使用那些十分相似的进行寻找相关的
+                #tmpCorrPro=sorted(corrPro[item1].iteritems(), key=itemgetter(1), reverse=True)#这种方法太慢，课尝试选择随机选取的方式
+                          
+                factorNum= 20 if len(corrPro[item1].keys())>20 else len(corrPro[item1].keys())  #这里每个相似的相关商品只随机取20个           
+                for item2 in random.sample(corrPro[item1],factorNum):    
                     tmpCorr=similarObjsList[i][1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2]))) 
                     #print item1,item2,tmpCorr
                     if result.has_key(item2)==False:
-                        result[item2]=tmpCorr                                         
+                        result[item2]=tmpCorr    
+                        coutCurNum+=1 
+                        if(coutCurNum>=200*breakFactor):
+                             print 'for3:coutCurNum>200*1.4:'+str(coutCurNum)
+                             break
                     else:                        
                         if result[item2]<tmpCorr:
                             result[item2]=tmpCorr   
                     #添加搭配项 的近似项                        
-                    if (similarPro.has_key(item2)==True)and(tmpCorr>0.45):#对相关商品继续找相似产品进行限制
+                    if ((similarPro.has_key(item2)==True)and(tmpCorr>0.45))and(coutCurNum<200*breakFactor) :#对相关商品继续找相似产品进行限制
                         tmpObjsList=[]
                         for item3 in similarPro[item2].keys():                               
                             tmpObjs=calSimilarItem(Items,CategoryItem,keyWords,item3)                               
@@ -317,14 +330,23 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
                                 for i in range(0,10):                                        
                                     item4=tmpObjsList[i][0]
                                     item4Corr=tmpCorr*tmpObjsList[i][1]
-                                    if (Items[item4][0]!=Items[itemObj][0]) and item4Corr>0.35:   
+                                    if (Items[item4][0]!=Items[itemObj][0]) and item4Corr>4:   
                                        # print item1,item2,item3,item4,item4Corr
                                         if (result.has_key(item4)==False):
-                                            result[item4]=item4Corr                                                
+                                            result[item4]=item4Corr  
+                                            coutCurNum+=1 
+                                            if (coutCurNum>=200*breakFactor):
+                                                print 'for2:coutCurNum>200*3:'+str(coutCurNum)
+                                                break
                                         else:
                                             if result[item4]<item4Corr:
                                                 result[item4]=item4Corr                                                                  
-                  
+                    if (coutCurNum>=200*breakFactor):
+                        print 'for2:coutCurNum>200*3:'+str(coutCurNum)
+                        break
+                if (coutCurNum>=200*breakFactor):
+                    print 'for1:coutCurNum>200*3:'+str(coutCurNum)
+                    break                  
         #对结果进行排序和处理                 
         resultList=sorted(result.iteritems(), key=itemgetter(1), reverse=True) 
         ## 如果相关度小于一定的值，不如直接推荐爆款
@@ -426,6 +448,8 @@ for i in similarPro.keys():
     
 plt.hist(LL,100)
 plt.show()
+
+splitFile(TEST_IITEMS,'tmp',10)
     
     
     
