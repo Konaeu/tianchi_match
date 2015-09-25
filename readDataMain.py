@@ -330,7 +330,7 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
         ## 如果相关度小于一定的值，不如直接推荐爆款
         strResult=str(itemObj)+' '
         if len(resultList)<200: #如果通过计算得到的相关值较少，则只可能通过随机选择，或者选择爆款
-            print 'len(resultList)<200:'+str(len(resultList))           
+            print str(itemObj)+'：len(resultList)<200:'+str(len(resultList))           
             count=0
             for i in range(0,len(resultList)):                
                 if i==0:
@@ -351,8 +351,8 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
             #print str(itemObj)+':'+str(count)
             fp.writelines(strResult)
         else:            
-            if resultList[200][1]<0.4: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
-                print 'resultList[200][1]<0.2:resultList[200][150]:'+str(resultList[200][150])
+            if resultList[200][1]<0.35: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
+                print str(itemObj)+':resultList[200][1]<0.2:resultList[200][150]:'+str(resultList[200][150])
                 count=0
                 for i in range(0,len(resultList)):
                     if i==0:
@@ -417,7 +417,7 @@ TestItems=readTestData()
 similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
 timeBuySta,ItemBuyOneMonth,ItemBuyHist=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
-resultFileName='fm_submissions_2.txt'
+resultFileName='fm_submissions_3.txt'
 matchResult(TestItems,similarPro,corrPro,resultFileName)
 
 LL=[]
