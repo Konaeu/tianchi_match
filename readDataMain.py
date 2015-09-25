@@ -303,29 +303,29 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
                     tmpCorr=similarObjsList[i][1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2]))) 
                     print item1,item2,tmpCorr
                     if result.has_key(item2)==False:
-                        result[item2]=tmpCorr
-                        #添加搭配项 的近似项                        
-                        if (similarPro.has_key(item2)==True)and(tmpCorr>0.4):#对相关商品继续找相似产品进行限制
-                            tmpObjsList=[]
-                            for item3 in similarPro[item2].keys():                               
-                                tmpObjs=calSimilarItem(Items,CategoryItem,keyWords,item3)                               
-                                if len(tmpObjs.keys())>0:
-                                    tmpObjsList=sorted(tmpObjs.iteritems(), key=itemgetter(1), reverse=True)
-                                    #这里只添加前几项
-                                    for i in range(0,10):                                        
-                                        item4=tmpObjsList[i][0]
-                                        item4Corr=similarObjs[item1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2])))*tmpObjsList[i][1]
-                                        if (Items[item4][0]!=Items[itemObj][0]) and item4Corr>0.3:   
-                                            print item1,item2,item3,item4,item4Corr
-                                            if (result.has_key(item4)==False):
-                                                result[item4]=item4Corr                                                
-                                            else:
-                                                if result[item4]<item4Corr:
-                                                    result[item4]=item4Corr                                              
+                        result[item2]=tmpCorr                                         
                     else:                        
                         if result[item2]<tmpCorr:
-                            result[item2]=tmpCorr                                                                
-                      
+                            result[item2]=tmpCorr   
+                    #添加搭配项 的近似项                        
+                    if (similarPro.has_key(item2)==True)and(tmpCorr>0.4):#对相关商品继续找相似产品进行限制
+                        tmpObjsList=[]
+                        for item3 in similarPro[item2].keys():                               
+                            tmpObjs=calSimilarItem(Items,CategoryItem,keyWords,item3)                               
+                            if len(tmpObjs.keys())>0:
+                                tmpObjsList=sorted(tmpObjs.iteritems(), key=itemgetter(1), reverse=True)
+                                #这里只添加前几项
+                                for i in range(0,10):                                        
+                                    item4=tmpObjsList[i][0]
+                                    item4Corr=similarObjs[item1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2])))*tmpObjsList[i][1]
+                                    if (Items[item4][0]!=Items[itemObj][0]) and item4Corr>0.3:   
+                                        print item1,item2,item3,item4,item4Corr
+                                        if (result.has_key(item4)==False):
+                                            result[item4]=item4Corr                                                
+                                        else:
+                                            if result[item4]<item4Corr:
+                                                result[item4]=item4Corr                                                                  
+                  
         #对结果进行排序和处理                 
         resultList=sorted(result.iteritems(), key=itemgetter(1), reverse=True) 
         ## 如果相关度小于一定的值，不如直接推荐爆款
