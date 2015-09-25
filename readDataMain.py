@@ -53,7 +53,31 @@ def removeAllSame(L,item):
     return M       
 ###计算两个list之间的相似度
 def similarFactor(List1,List2):
-    return len(set(List1).intersection(set(List2)))*2.0/(len(set(List1))+len(set(List2)))
+    tmpDic1={}  
+    tmpDic2={}
+    coutSame=0
+    cout1=0
+    cout2=0
+    for i in List1:
+        if tmpDic1.has_key(i)==False:
+            tmpDic1[i]=1
+            cout1+=1
+   
+    for j in List2:
+        if tmpDic1.has_key(j)==True:
+            coutSame+=1
+            tmpDic1.pop(j)
+        if tmpDic2.has_key(j)==False:
+            tmpDic2[j]=1
+            cout2+=1
+    
+    if (cout1+cout2)==0:
+        return 0.0
+    else:
+        return coutSame*2.0/(cout1+cout2)
+        
+        
+    
 ### 读取所有的商品信息
 def readItems(filename):
     fp_items=open(filename,'r')
@@ -93,18 +117,24 @@ def readItems(filename):
         for key in keyWords[cat_id].keys():       
             keyWords[cat_id][key]=list(set(keyWords[cat_id][key]))
     
-    lowFreTh=4  #设置要清理的低频关键词，如果小于该阈值将把该商品的该关键词删除
-    for key1 in keyWords.keys():
+    lowFreTh=500  #设置要清理的低频关键词，如果小于该阈值将把该商品的该关键词删除
+    largeFreTh=10000
+    keyWords_filter={}
+    for key1 in keyWords.keys():       
         for key2 in keyWords[key1]:
-            if(len(keyWords[key1][key2])<lowFreTh):
+            if(len(keyWords[key1][key2])<lowFreTh)or(len(keyWords[key1][key2])>largeFreTh):
                 for i in keyWords[key1][key2]:  
-                    Items[i]=removeAllSame(Items[i],key2);
+                    Items[i][1:]=removeAllSame(Items[i][1:],key2); #一定要注意，Items[0]是Item所属的类
                     CategoryItem[key1][i]= removeAllSame(CategoryItem[key1][i],key2);  
-    return Items,CategoryItem,keyWords
+            else:
+                if keyWords_filter.has_key(key1)==False:
+                    keyWords_filter[key1]={}
+                keyWords_filter[key1][key2]=keyWords[key1][key2]
+                    
+    return Items,CategoryItem,keyWords_filter
    
 #将大文件进行分割
-def splitFile(filename,objFolderName,split_num):    
-    time1=time.time()
+def splitFile(filename,objFolderName,split_num):         
     fo=open(filename,'r')
     lineNum=len(fo.readlines()) #读取总共的行数
     stepLen=lineNum/split_num
@@ -133,7 +163,7 @@ def splitFile(filename,objFolderName,split_num):
 def readUserHistory():
     if os.path.exists('SPLIT')==False:#是否存在SPILT文件夹，如果不存在则创建
         os.mkdir('SPLIT')
-        splitFile(USER_BUY_HISTORY,1000) #分成1000份
+        splitFile(USER_BUY_HISTORY,'SPLIT',1000) #分成1000份
         
     pool=Pool(THEAD_NUM)
     results=pool.map(readUserBuyHistoryPara,get_txt_paths('SPLIT'))
@@ -160,24 +190,29 @@ def readUserHistory():
     return userBuy,minTime,maxTime
 
 ### 读取要预测搭配的商品ID
-def readTestData():
+def readTestData(testFileName):
     testItems=[]
-    fo=open(TEST_IITEMS,'r')
+    fo=open(testFileName,'r')
     lines=fo.readlines()
     for line in lines:
         testItems+=[string.atoi(line)]
     fo.close()
     return testItems
         
-#####使用基于Item-to-Item的算法来对给定的item_id进行求算与之相似的item_id
-def calSimilarItem(Items,CategoryItem,keyWords,item_id):
+#####使用基于Item-to-Item的算法来对给定的item_id进行求算与之相似的item_id,minCorrValue为设置的最小相关度的值，小于该值将不做统计
+def calSimilarItem(Items,CategoryItem,keyWords,item_id,minCorrValue):
     similarItems={} #字典，用来保存所有和item_id有关的item
     cat_id=Items[item_id][0]
-    for term1 in Items[item_id][1:]:
-        for item in keyWords[cat_id][term1]: #查找关键词表中，包含term1的所有商品ID
-            if item!=item_id:   
-                if similarItems.has_key(item)==False:#由于多个关键词会导致重复，这里去除重复
-                    similarItems[item]=similarFactor(Items[item],Items[item_id])
+    #item_id=2232
+    if CategoryItem[cat_id].has_key(item_id)==True:
+        #print 'has item_id:'+str(item_id)
+        for term1 in CategoryItem[cat_id][item_id]:
+            for item in keyWords[cat_id][term1]: #查找关键词表中，包含term1的所有商品ID
+                if item!=item_id:                   
+                    if similarItems.has_key(item)==False:#由于多个关键词会导致重复，这里去除重复                
+                        value= similarFactor(CategoryItem[Items[item][0]][item],CategoryItem[cat_id][item_id])  #这部分会比较费时                
+                        if value>=minCorrValue: #minCorrValue为设置的最小相关度的值，小于该值将不做统计
+                            similarItems[item]=value
     return similarItems
                     
 ###根据达人体检搭配给出相似关系和搭配相关度
@@ -241,8 +276,7 @@ def calSimilarAndCorrPro(MatchSet):
     return similarPro,corrPro
                                 
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
-def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
-    time1=time.time()    
+def calSimilarAndCorrUser(UserBuy,minTime,maxTime):  
     timeBuySta={}
     ItemBuyHist={}  #用来存储用户购买的记录，关键词是item_id    
     ItemBuyOneMonth={}
@@ -270,7 +304,7 @@ def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
                 ItemBuyHist[curItem]+=[user_id]  
     return timeBuySta,ItemBuyOneMonth,ItemBuyHist
 ##提交结果，只使用商品信息进行推荐，不推荐同一类，但可以推荐相似度较大的同类产品的
-def matchResult(TestItems,similarPro,corrPro,resultFileName):
+def matchResult(TestItems,Items,similarPro,corrPro,resultFileName):
     #万能搭配
     matchAll=[]
     for i in corrPro.keys():
@@ -286,12 +320,13 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
     
     for itemObj in TestItems:        
         proc+=1
-        #itemObj=247482
+        print 'index,itemObj:'+str(proc)+','+str(itemObj)
+        #itemObj=2232
         if proc%stepLen==0:
             print 'processing:'+str(proc*1.0/len(TestItems))
         #计算相似度
         coutCurNum=0 #统计当前共选择的match数量
-        similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj)
+        similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj,0.1)
         if similarPro.has_key(itemObj)==True:
             for i in similarPro[itemObj].keys():                
                 similarObjs[itemObj][i]=1#这里先忽略具体商品搭配的次数
@@ -303,11 +338,13 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
         breakFactor=1.2
         for i in range(0,len(similarObjsList)):
             item1=similarObjsList[i][0]
+            #print 'item1:'+str(item1)
             if (corrPro.has_key(item1)==True) and similarObjsList[i][1]>0.4: #使用那些十分相似的进行寻找相关的
-                #tmpCorrPro=sorted(corrPro[item1].iteritems(), key=itemgetter(1), reverse=True)#这种方法太慢，课尝试选择随机选取的方式
-                          
-                factorNum= 20 if len(corrPro[item1].keys())>20 else len(corrPro[item1].keys())  #这里每个相似的相关商品只随机取20个           
-                for item2 in random.sample(corrPro[item1],factorNum):    
+                #tmpCorrPro=sorted(corrPro[item1].iteritems(), key=itemgetter(1), reverse=True)#这种方法太慢，课尝试选择随机选取的方式     
+                factorNum= 6 if len(corrPro[item1].keys())>5 else len(corrPro[item1].keys())  #这里每个相似的相关商品只随机取20个           
+                #print 'factorNum:'+str(factorNum)                
+                for item2 in random.sample(corrPro[item1],factorNum):   
+                    #print 'item1,item2：'+str(item1)+','+str(item2)
                     tmpCorr=similarObjsList[i][1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2]))) 
                     #print item1,item2,tmpCorr
                     if result.has_key(item2)==False:
@@ -321,23 +358,22 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
                             result[item2]=tmpCorr   
                     #添加搭配项 的近似项                        
                     if ((similarPro.has_key(item2)==True)and(tmpCorr>0.45))and(coutCurNum<200*breakFactor) :#对相关商品继续找相似产品进行限制
-                        tmpObjsList=[]
-                        for item3 in similarPro[item2].keys():                               
-                            tmpObjs=calSimilarItem(Items,CategoryItem,keyWords,item3)                               
+                        tmpObjsList=[]  
+                        tmpSimilarNum= 10 if len(similarPro[item2].keys())>10 else len(similarPro[item2].keys())
+                        for item3 in random.sample(similarPro[item2],tmpSimilarNum):                
+                            tmpObjs=calSimilarItem(Items,CategoryItem,keyWords,item3,0.45)                             
                             if len(tmpObjs.keys())>0:
-                                tmpObjsList=sorted(tmpObjs.iteritems(), key=itemgetter(1), reverse=True)
+                                tmpObjsList=sorted(tmpObjs.iteritems(), key=itemgetter(1), reverse=True)#排序太费时间了，尤其是对已经  
                                 #这里只添加前几项
-                                for i in range(0,10):                                        
+                                maxTry=10 if len(tmpObjs.keys())>10 else len(tmpObjs.keys())
+                                for i in range(0,maxTry):                                        
                                     item4=tmpObjsList[i][0]
                                     item4Corr=tmpCorr*tmpObjsList[i][1]
-                                    if (Items[item4][0]!=Items[itemObj][0]) and item4Corr>4:   
-                                       # print item1,item2,item3,item4,item4Corr
+                                    if (Items[item4][0]!=Items[itemObj][0]) and item4Corr>0.4:                                           
+                                        #print 'item1,item2,item3,item4,item4Corr'
                                         if (result.has_key(item4)==False):
                                             result[item4]=item4Corr  
                                             coutCurNum+=1 
-                                            if (coutCurNum>=200*breakFactor):
-                                                print 'for2:coutCurNum>200*3:'+str(coutCurNum)
-                                                break
                                         else:
                                             if result[item4]<item4Corr:
                                                 result[item4]=item4Corr                                                                  
@@ -427,34 +463,24 @@ def calTimeDistance(t1,t2):#计算两个时间相差的的月份，t1<t2
 #### 读取原始数据      
 MatchSet= readMatchSet(MATCH_SET_FILENAME) 
 Items,CategoryItem,keyWords=readItems(ITEMS_FILENAME)
-UserBuy,minTime,maxTime=readUserHistory()  #读取用户的信息 
-TestItems=readTestData()
- 
+#UserBuy,minTime,maxTime=readUserHistory()  #读取用户的信息 
+
+      
 ### 计算相关度和相似度
 #根据商品的关键词来计算商品间的相似性，这里暂时没有使用图片信息，这里返回指定item_id的所有相似商品id
- 
 
 
 ## 根据达人推荐搭配计算相似性和相关性
 similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
-timeBuySta,ItemBuyOneMonth,ItemBuyHist=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
+#timeBuySta,ItemBuyOneMonth,ItemBuyHist=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
-resultFileName='fm_submissions_3.txt'
-matchResult(TestItems,similarPro,corrPro,resultFileName)
 
-LL=[]
-for i in similarPro.keys():
-    LL+=[len(similarPro[i].keys())]
-    
-plt.hist(LL,100)
-plt.show()
 
-splitFile(TEST_IITEMS,'tmp',10)
-    
-    
-    
-    
-    
-    
-    
-    
+index1=5
+resultFileName='fm_submissions_lzhq_'+str(index1)+'.txt'
+testFileName='SplitTest/'+str(index1)+'.txt'
+TestItems=readTestData(testFileName) 
+matchResult(TestItems,Items,similarPro,corrPro,resultFileName)
+
+#splitFile(TEST_IITEMS,'SplitTest',6)
+     
