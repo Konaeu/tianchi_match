@@ -281,40 +281,63 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
     fp=open(resultFileName,'w')
     result={}
     proc=0
-    stepLen=len(TestItems)/10
+    stepLen=len(TestItems)/100
     for itemObj in TestItems:
         proc+=1
+        itemObj=3094262
         if proc%stepLen==0:
             print 'processing:'+str(proc*1.0/len(TestItems))
         similarObjs=calSimilarItem(Items,CategoryItem,keyWords,itemObj)
         if similarPro.has_key(itemObj)==True:
             for i in similarPro[itemObj].keys():                
                 similarObjs[itemObj][i]=1#这里先忽略具体商品搭配的次数
-        #similarObjs=sorted(similarObjs.iteritems(), key=itemgetter(1), reverse=True) 
+        similarObjsList=sorted(similarObjs.iteritems(), key=itemgetter(1), reverse=True) 
         if corrPro.has_key(itemObj)==True: #判断达人推荐中是否有该商品
             for key in corrPro[itemObj].keys():
                  result[key]=99999999.0
         
-        for item1 in similarObjs.keys():
-            if corrPro.has_key(item1)==True:
-                for item2 in corrPro[item1].keys():
-                    tmpCorr=similarObjs[item1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2]))) 
+        for i in range(0,len(similarObjsList)):
+            item1=similarObjsList[i][0]
+            if (corrPro.has_key(item1)==True) and similarObjsList[i][1]>0.4: #使用那些十分相似的进行寻找相关的
+                for item2 in corrPro[item1].keys():               
+                    tmpCorr=similarObjsList[i][1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2]))) 
+                    print item1,item2,tmpCorr
                     if result.has_key(item2)==False:
                         result[item2]=tmpCorr
+                        #添加搭配项 的近似项                        
+                        if (similarPro.has_key(item2)==True)and(tmpCorr>0.4):#对相关商品继续找相似产品进行限制
+                            tmpObjsList=[]
+                            for item3 in similarPro[item2].keys():                               
+                                tmpObjs=calSimilarItem(Items,CategoryItem,keyWords,item3)                               
+                                if len(tmpObjs.keys())>0:
+                                    tmpObjsList=sorted(tmpObjs.iteritems(), key=itemgetter(1), reverse=True)
+                                    #这里只添加前几项
+                                    for i in range(0,10):                                        
+                                        item4=tmpObjsList[i][0]
+                                        item4Corr=similarObjs[item1]*1.0*(2-math.pow(np.e,-0.1*(corrPro[item1][item2])))*tmpObjsList[i][1]
+                                        if (Items[item4][0]!=Items[itemObj][0]) and item4Corr>0.3:   
+                                            print item1,item2,item3,item4,item4Corr
+                                            if (result.has_key(item4)==False):
+                                                result[item4]=item4Corr                                                
+                                            else:
+                                                if result[item4]<item4Corr:
+                                                    result[item4]=item4Corr                                              
                     else:                        
                         if result[item2]<tmpCorr:
-                            result[item2]=tmpCorr
+                            result[item2]=tmpCorr                                                                
+                      
+        #对结果进行排序和处理                 
         resultList=sorted(result.iteritems(), key=itemgetter(1), reverse=True) 
         ## 如果相关度小于一定的值，不如直接推荐爆款
         strResult=str(itemObj)+' '
         if len(resultList)<200: #如果通过计算得到的相关值较少，则只可能通过随机选择，或者选择爆款
-            print 'len(resultList)<200:'+str(resultList)           
+            print 'len(resultList)<200:'+str(len(resultList))           
             count=0
             for i in range(0,len(resultList)):                
                 if i==0:
-                    strResult+=str(resultList[i])
+                    strResult+=str(resultList[i][0])+','
                 else:
-                    strResult+=str(resultList[i])+','
+                    strResult+=str(resultList[i][0])+','
             count=len(resultList)
             for j in range(0,len(matchAll)):
                 if (result.has_key(matchAll[j][0])==False)and(Items[matchAll[j][0]][0]!=Items[itemObj][0]):
@@ -329,7 +352,7 @@ def matchResult(TestItems,similarPro,corrPro,resultFileName):
             #print str(itemObj)+':'+str(count)
             fp.writelines(strResult)
         else:            
-            if resultList[200][1]<0.2: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
+            if resultList[200][1]<0.4: #这里是经验值，用来设置当推荐相关度较低的结果，不如推荐爆款
                 print 'resultList[200][1]<0.2:resultList[200][150]:'+str(resultList[200][150])
                 count=0
                 for i in range(0,len(resultList)):
@@ -395,12 +418,15 @@ TestItems=readTestData()
 similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
 timeBuySta,ItemBuyOneMonth,ItemBuyHist=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
-resultFileName='fm_submissions.txt'
+resultFileName='fm_submissions1.txt'
 matchResult(TestItems,similarPro,corrPro,resultFileName)
 
-        
+LL=[]
+for i in similarPro.keys():
+    LL+=[len(similarPro[i].keys())]
     
-    
+plt.hist(LL,100)
+plt.show()
     
     
     
