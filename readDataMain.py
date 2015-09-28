@@ -80,19 +80,22 @@ def similarFactor(List1,List2):
     
 ### 读取所有的商品信息
 def readItems(filename):
+    time1=time.time()
+    print '*****************readItems******************* '
     fp_items=open(filename,'r')
     Items={}
     CategoryItem={} #以类目ID作为key
+    ItemCategoryDic={} #以Item为key的字典，可以直接所有item所属的类别
     keyWords={}  #用来存储各个商品分词所对应的商品
     countLine=0
-    for line in fp_items.readlines():
+    for line in fp_items.readlines():             
         countLine=countLine+1
         item_id,cat_id,terms=line.split(SEPARATOR_1) #以空格作为分割符号
         item_id=string.atoi(item_id)
         cat_id=string.atoi(cat_id)   
         if(keyWords.has_key(cat_id)==False):
             keyWords[cat_id]={}
-        
+        ItemCategoryDic[item_id]=cat_id  #统计item-category
         item_info=[cat_id]
         terms_sp=terms.split(SEPARATOR_2)
         terms_list=[]
@@ -130,8 +133,9 @@ def readItems(filename):
                 if keyWords_filter.has_key(key1)==False:
                     keyWords_filter[key1]={}
                 keyWords_filter[key1][key2]=keyWords[key1][key2]
-                    
-    return Items,CategoryItem,keyWords_filter
+    time2=time.time()
+    print 'cost time:'+str(time2-time1)+' s'
+    return Items,CategoryItem,ItemCategoryDic,keyWords_filter
    
 #将大文件进行分割
 def splitFile(filename,objFolderName,split_num):         
@@ -160,7 +164,10 @@ def splitFile(filename,objFolderName,split_num):
  
 
 ### 并行计算的方式读取用户的购买信息
-def readUserHistory():
+def readUserHistory(ItemCategoryDic):
+    time1=time.time()
+    print '*************readUserHistory****************'
+    CategoryUserbuyPerDay={} #每类商品每天购买的数量
     if os.path.exists('SPLIT')==False:#是否存在SPILT文件夹，如果不存在则创建
         os.mkdir('SPLIT')
         splitFile(USER_BUY_HISTORY,'SPLIT',1000) #分成1000份
@@ -183,11 +190,22 @@ def readUserHistory():
     for user_id in userBuy.keys():
         for j in range(0,len(userBuy[user_id])):
             curTime=userBuy[user_id][j][1]
+            curItem=userBuy[user_id][j][0]
+            if ItemCategoryDic.has_key(curItem)==True:
+                cat_id=ItemCategoryDic[curItem]
+                if CategoryUserbuyPerDay[cat_id].has_key(curTime)==False:                    
+                    CategoryUserbuyPerDay[cat_id][curTime]=1
+                else:
+                    CategoryUserbuyPerDay[cat_id][curTime]+=1
+                    
             if(curTime>maxTime):
                 maxTime=curTime
             if(curTime<minTime):
                 minTime=curTime
-    return userBuy,minTime,maxTime
+    
+    time2=time.time()
+    print 'cost time:'+str(time2-time1)+' s'
+    return userBuy,CategoryUserbuyPerDay,minTime,maxTime
 
 ### 读取要预测搭配的商品ID
 def readTestData(testFileName):
@@ -462,10 +480,10 @@ def calTimeDistance(t1,t2):#计算两个时间相差的的月份，t1<t2
 
 #### 读取原始数据      
 MatchSet= readMatchSet(MATCH_SET_FILENAME) 
-Items,CategoryItem,keyWords=readItems(ITEMS_FILENAME)
-#UserBuy,minTime,maxTime=readUserHistory()  #读取用户的信息 
+Items,CategoryItem,ItemCategoryDic,keyWords=readItems(ITEMS_FILENAME)
+#UserBuy,CategoryUserbuyPerDay,minTime,maxTime=readUserHistory(ItemCategoryDic)  #读取用户的信息 
 
-      
+    
 ### 计算相关度和相似度
 #根据商品的关键词来计算商品间的相似性，这里暂时没有使用图片信息，这里返回指定item_id的所有相似商品id
 
@@ -482,5 +500,52 @@ testFileName='SplitTest/'+str(index1)+'.txt'
 TestItems=readTestData(testFileName) 
 matchResult(TestItems,Items,similarPro,corrPro,resultFileName)
 
+#一次读取所有结果
+resultFileName='fm_submissions_lzhq_all_0928.txt'
+testFileName='test_items.txt'
+TestItems=readTestData(TEST_IITEMS) 
+matchResult(TestItems,Items,similarPro,corrPro,resultFileName)
 #splitFile(TEST_IITEMS,'SplitTest',6)
-     
+ 
+
+finalMatch1={}
+results=[]
+for i in range(0,5):
+    resultFileName='fm_submissions_lzhq_'+str(i)+'.txt'
+    fo=open(resultFileName,'r')
+    results+=[fo.readlines()]
+    fo.close()
+for i in range(0,len(results)):    
+    for j in range(0,len(results[i])-1):
+        test_id,test_result=results[i][j].split(SEPARATOR_1)
+        if(finalMatch1.has_key(test_id))==True:
+            print test_id
+        finalMatch1[test_id]=test_result
+
+#
+#finalMatch2={}    
+#oldResults=[]
+#fo=open('fm_submissions.txt','r')
+#oldResults=fo.readlines()
+#fo.close()
+#
+#for j in range(0,len(oldResults)):
+#    test_id,test_result=oldResults[j].split(SEPARATOR_1)
+#    if(finalMatch2.has_key(test_id))==True:
+#        print test_id
+#    finalMatch2[test_id]=test_result
+#
+#fp=open('fm_submissions_0926.txt','w')
+#finalResults=[]
+#for i in range(0,len(TestItems)):
+#    if finalMatch1.has_key(str(TestItems[i]))==True:
+#        finalResults+=[str(TestItems[i])+' '+finalMatch1[str(TestItems[i])]]
+#    else:
+#        finalResults+=[str(TestItems[i])+' '+finalMatch2[str(TestItems[i])]]
+#fp.writelines(finalResults) 
+#fp.close()
+#    
+#    
+    
+    
+    
