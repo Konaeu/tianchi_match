@@ -1,6 +1,7 @@
 import os
 import PIL
 import time
+import datetime
 import string
 import math
 import random
@@ -193,16 +194,19 @@ def readUserHistory(ItemCategoryDic):
             curItem=userBuy[user_id][j][0]
             if ItemCategoryDic.has_key(curItem)==True:
                 cat_id=ItemCategoryDic[curItem]
-                if CategoryUserbuyPerDay[cat_id].has_key(curTime)==False:                    
+                if CategoryUserbuyPerDay.has_key(cat_id)==False: #首先判断手否有该类
+                    CategoryUserbuyPerDay[cat_id]={}
+                if CategoryUserbuyPerDay[cat_id].has_key(curTime)==False: #然后判读阿该类中是否有该时间的统计                   
                     CategoryUserbuyPerDay[cat_id][curTime]=1
                 else:
-                    CategoryUserbuyPerDay[cat_id][curTime]+=1
-                    
+                    CategoryUserbuyPerDay[cat_id][curTime]+=1     
+            else:
+                print 'Donnot have this item in ItemCategoryDic'                
+                
             if(curTime>maxTime):
                 maxTime=curTime
             if(curTime<minTime):
                 minTime=curTime
-    
     time2=time.time()
     print 'cost time:'+str(time2-time1)+' s'
     return userBuy,CategoryUserbuyPerDay,minTime,maxTime
@@ -295,6 +299,8 @@ def calSimilarAndCorrPro(MatchSet):
                                 
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
 def calSimilarAndCorrUser(UserBuy,minTime,maxTime):  
+    time1=time.time()
+    print '*******************calSimilarAndCorrUser**************'
     timeBuySta={}
     ItemBuyHist={}  #用来存储用户购买的记录，关键词是item_id    
     ItemBuyOneMonth={}
@@ -320,7 +326,20 @@ def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
                 ItemBuyHist[curItem]=[user_id]
             else:
                 ItemBuyHist[curItem]+=[user_id]  
+    time2=time.time()
+    print 'cost time:'+str(time2-time1)+' s'
     return timeBuySta,ItemBuyOneMonth,ItemBuyHist
+#根据各个类在不同时间所购买的情况来计算不同类别的相关度
+def calCategorySimilar(CategoryUserbuyPerDay):
+    categoryBuySum={} #用来统计每个类的总购买数量，用来表明类的购买热度
+    categorySimilarPro={} #不同类别之间的相关性以字典的方式进行存储， cat_id1,cat_id2
+    for cat_1 in CategoryUserbuyPerDay.keys():        
+        categoryBuySum[cat1]=sum(CategoryUserbuyPerDay[cat_1].values()) 
+        
+    return categoryBuySum,categorySimilarPro
+            
+        
+    
 ##提交结果，只使用商品信息进行推荐，不推荐同一类，但可以推荐相似度较大的同类产品的
 def matchResult(TestItems,Items,similarPro,corrPro,resultFileName):
     #万能搭配
@@ -467,6 +486,15 @@ def matchResult(TestItems,Items,similarPro,corrPro,resultFileName):
 #由连续时间进行分割
 def splitTime(t):
     return t/10000,(t%10000)/100,t%100
+def calDeltaDays(compareTime,minTime): #计算两个时间间的天数（compareTime-minTime）
+    year1,month1,day1=compareTime/10000,(compareTime%10000)/100,compareTime%100
+    year2,month2,day2=minTime/10000,(minTime%10000)/100,minTime%100
+    d1=datetime.date(year1,month1,day1)
+    d2=datetime.date(year2,month2,day2)
+    de=d1-d2
+    deltaDays=int(de.total_seconds()/(3600*24))
+    return deltaDays
+    
 def calTimeDistance(t1,t2):#计算两个时间相差的的月份，t1<t2
     if t1>t2:
         tmp=t1
@@ -481,7 +509,7 @@ def calTimeDistance(t1,t2):#计算两个时间相差的的月份，t1<t2
 #### 读取原始数据      
 MatchSet= readMatchSet(MATCH_SET_FILENAME) 
 Items,CategoryItem,ItemCategoryDic,keyWords=readItems(ITEMS_FILENAME)
-#UserBuy,CategoryUserbuyPerDay,minTime,maxTime=readUserHistory(ItemCategoryDic)  #读取用户的信息 
+UserBuy,CategoryUserbuyPerDay,minTime,maxTime=readUserHistory(ItemCategoryDic)  #读取用户的信息 
 
     
 ### 计算相关度和相似度
@@ -490,7 +518,7 @@ Items,CategoryItem,ItemCategoryDic,keyWords=readItems(ITEMS_FILENAME)
 
 ## 根据达人推荐搭配计算相似性和相关性
 similarPro,corrPro=calSimilarAndCorrPro(MatchSet)
-#timeBuySta,ItemBuyOneMonth,ItemBuyHist=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
+timeBuySta,ItemBuyOneMonth,ItemBuyHist=calSimilarAndCorrUser(UserBuy,minTime,maxTime)
 ## 根据用户购买的历史记录，计算商品的相关性和相似性
 
 
@@ -522,7 +550,24 @@ for i in range(0,len(results)):
             print test_id
         finalMatch1[test_id]=test_result
 
-#
+
+#显示统计类的结果
+cat=CategoryUserbuyPerDay.keys()
+index1=167
+x=CategoryUserbuyPerDay[cat[index1]].keys()
+y=CategoryUserbuyPerDay[cat[index1]].values()
+z=[]
+for i in x:
+    z.append(calDeltaDays(i,minTime))
+plt.bar(z,y)
+plt.show()
+
+sumBuy=[]
+for cat_id in CategoryUserbuyPerDay.keys():     
+     sumBuy+=[sum(CategoryUserbuyPerDay[cat_id].values())]
+plt.hist(sumBuy,2000)
+ 
+
 #finalMatch2={}    
 #oldResults=[]
 #fo=open('fm_submissions.txt','r')
