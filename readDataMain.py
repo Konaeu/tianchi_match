@@ -329,16 +329,45 @@ def calSimilarAndCorrUser(UserBuy,minTime,maxTime):
     time2=time.time()
     print 'cost time:'+str(time2-time1)+' s'
     return timeBuySta,ItemBuyOneMonth,ItemBuyHist
-#根据各个类在不同时间所购买的情况来计算不同类别的相关度
-def calCategorySimilar(CategoryUserbuyPerDay):
+###根据各个类在不同时间所购买的情况来计算不同类别的相关度
+## deltaForCorr:定义计算相关度时，多长间隔天数为一个计算单元，默认为1
+def calCategorySimilar(CategoryUserbuyPerDay,deltaForCorr,maxTime,minTime):
+    time1=time.time()
+    print '************************calCategorySimilar***********************'
     categoryBuySum={} #用来统计每个类的总购买数量，用来表明类的购买热度
-    categorySimilarPro={} #不同类别之间的相关性以字典的方式进行存储， cat_id1,cat_id2
-    for cat_1 in CategoryUserbuyPerDay.keys():        
-        categoryBuySum[cat1]=sum(CategoryUserbuyPerDay[cat_1].values()) 
-        
-    return categoryBuySum,categorySimilarPro
-            
-        
+    categorySimilar={} #不同类别之间的相关性以字典的方式进行存储， cat_id1,cat_id2
+    totalDaysNum=calDeltaDays(maxTime,minTime)+1
+    totalCatNum=len(CategoryUserbuyPerDay.keys())
+    catPro=np.zeros([totalCatNum,totalDaysNum])  #用来保存每个类别在每天的购买概率
+    catIndex={}     #用来存储(cat_id,cat_index)
+    catProPerDelta=np.zeros([totalCatNum,int(np.ceil(totalDaysNum*1.0/deltaForCorr))]) #按照制定的
+    for cat_index in  range(0,len(CategoryUserbuyPerDay.keys())):
+        cat_id= CategoryUserbuyPerDay.keys()[cat_index] 
+        catIndex[cat_id]=cat_index
+        cat_buy_sum=sum(CategoryUserbuyPerDay[cat_id].values()) 
+        categoryBuySum[cat_id]=cat_buy_sum
+        for buy_time in CategoryUserbuyPerDay[cat_id].keys():
+            deltaDays=calDeltaDays(buy_time,minTime)
+            buy_num=CategoryUserbuyPerDay[cat_id][buy_time]
+            catPro[cat_index,deltaDays]=buy_num*1.0/cat_buy_sum
+            catProPerDelta[cat_index,int(np.floor(deltaDays/deltaForCorr))]+=buy_num
+     
+    for cat_index in range(0,len(CategoryUserbuyPerDay.keys())):
+        cat_id= CategoryUserbuyPerDay.keys()[cat_index]
+        catProPerDelta[cat_index,:]=catProPerDelta[cat_index,:]/sum(CategoryUserbuyPerDay[cat_id].values()) 
+
+    for cat_1 in CategoryUserbuyPerDay.keys():
+        categorySimilar[cat_1]={}
+        for cat_2 in CategoryUserbuyPerDay.keys():            
+            if (cat_2!=cat_1):
+                categorySimilar[cat_1][cat_2]=sum(abs(catProPerDelta[catIndex[cat_1],:]-catProPerDelta[catIndex[cat_2],:]))
+         
+     #对结果进行排序和处理                 
+    resultList=sorted(categorySimilar[cat_1].iteritems(), key=itemgetter(1), reverse=False) 
+    time2=time.time()
+    print 'cost time:'+str(time2-time1)+' s'
+    return categoryBuySum,categorySimilar
+ 
     
 ##提交结果，只使用商品信息进行推荐，不推荐同一类，但可以推荐相似度较大的同类产品的
 def matchResult(TestItems,Items,similarPro,corrPro,resultFileName):
@@ -553,9 +582,9 @@ for i in range(0,len(results)):
 
 #显示统计类的结果
 cat=CategoryUserbuyPerDay.keys()
-index1=167
-x=CategoryUserbuyPerDay[cat[index1]].keys()
-y=CategoryUserbuyPerDay[cat[index1]].values()
+cat_id=527
+x=CategoryUserbuyPerDay[cat_id].keys()
+y=CategoryUserbuyPerDay[cat_id].values()
 z=[]
 for i in x:
     z.append(calDeltaDays(i,minTime))
@@ -567,7 +596,7 @@ for cat_id in CategoryUserbuyPerDay.keys():
      sumBuy+=[sum(CategoryUserbuyPerDay[cat_id].values())]
 plt.hist(sumBuy,2000)
  
-
+510
 #finalMatch2={}    
 #oldResults=[]
 #fo=open('fm_submissions.txt','r')
